@@ -3,6 +3,7 @@ import Utilities
 import System.Random
 import Data.Char
 
+
 chatterbot :: String -> [(String, [String])] -> IO ()
 chatterbot botName botRules = do
     putStrLn ("\n\nHi! I am " ++ botName ++ ". How are you?")
@@ -104,25 +105,47 @@ reductionsApply _ = id
 -- Match and substitute
 --------------------------------------------------------
 
--- Replaces a wildcard in a list with the list given as the third argument
-substitute :: Eq a => a -> [a] -> [a] -> [a]
-substitute _ _ _ = []
-{- TO BE WRITTEN -}
+-- Example
+-- substitute 'x' "3*cos(x) + 4 - x" "5.37" = "3*cos(5.37) + 4 - 5.37"
 
+-- Replaces each occurrence of wildcard in list (t:ts) with the list s
+substitute :: Eq a => a -> [a] -> [a] -> [a]
+substitute wildcard (t:ts) s
+                | t == wildcard = s   ++ substitute wildcard ts s
+                | otherwise     = [t] ++ substitute wildcard ts s
+
+
+-- Examples
+-- match 'x' "2*x+3" "2*7+3" = Just "7"
+-- match '*' "frodo" "gandalf" = Nothing
+-- match 2 [1,3..5] [1,3..5] = Just []
+-- match '*' "* and *" "you and me" = Just "you"
+-- match 'x' "2*x+3+x" "2*7+3" = Nothing
 
 -- Tries to match two lists. If they match, the result consists of the sublist
 -- bound to the wildcard in the pattern list.
+-- p is considered a pattern which may contain elements equal to wildcard
+-- s is the list to look for the wildcard replacement
 match :: Eq a => a -> [a] -> [a] -> Maybe [a]
-match _ _ _ = Nothing
-{- TO BE WRITTEN -}
+match wildcard [] []    = Just []
+match wildcard [] s     = Nothing
+match wildcard p []     = Nothing
+
+match wildcard pt@(p:ps) st@(s:ss)
+      | p == wildcard   = sing `orElse` long
+      | p == s          = match wildcard ps ss
+      | otherwise       = Nothing
+      where
+              sing = singleWildcardMatch pt st
+              long = longerWildcardMatch pt st
 
 
 -- Helper function to match
+-- single : match 'x' "2*x+3" "2*7+3" = Just "7"          -> Just take one
+-- longer : match '*' "* and *" "you and me" = Just "you" -> Keep adding
 singleWildcardMatch, longerWildcardMatch :: Eq a => [a] -> [a] -> Maybe [a]
-singleWildcardMatch (wc:ps) (x:xs) = Nothing
-{- TO BE WRITTEN -}
-longerWildcardMatch (wc:ps) (x:xs) = Nothing
-{- TO BE WRITTEN -}
+singleWildcardMatch (wc:ps) (s:ss) = mmap (const [s])   $ match wc ps ss
+longerWildcardMatch (wc:ps) (s:ss) = mmap (s:)          $ match wc (wc:ps) ss
 
 
 
