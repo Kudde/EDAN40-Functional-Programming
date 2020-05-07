@@ -9,6 +9,7 @@ The purpose of this assignment is threefold:
 3. Teach you the preferred style of writing Haskell code (you may wish to look up the expressions "point-free style", or "point-free programming". 
 
 ## Assignment 2 - String Alignment
-
+In this assignment you will use Haskell to solve a fundamental theoretical problem from combinatorics. On the way you will learn to use memoization.
 
 ## Assignment 3 - Functional Parsing
+In this assignment you will create a parser and an interpreter for a small imperative language. The main goal is to get acquainted with a monadic way of solving a classical problem in computer science.
