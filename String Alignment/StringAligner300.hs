@@ -1,3 +1,20 @@
+-- ------------------------------------------- Reflections
+
+-- Which parts of your code / functions were the hardest to write and why?,
+--   optAlignments       - due to it taking some time to just get a good understanding of the problem and getting the recursions right
+--                         and saving part solutions, especially in the optimization part which requierd writing things out on papper,
+--                         especially since haskells lack of a print function mid execution and will to run if the code isn't already perfect.
+--                         Another challenge was the long execution time when taking a slightly wrong turn in the implemenation or when spending
+--                         an hour or two on accidentally running optAlignments instead of optAlignmentsTurbo in part 3..
+--   outputOptAlignments - trying to put spaces between each character. still haven't figured that one out.
+--                         Can't seem to get the word on the right format for mapping (++" ") to the word as a string or iterating through the characters
+
+-- Which parts of your code / functions are you the most proud of,
+-- I kinda want to cry when i see it.
+-- I not sure if I can say I'm proud of similarityScore and optAlignments since it felt most like a copy-paste
+-- from mcsLength and the hint section but otherwise from that I feel pretty proud of just being able to read the code the day after
+-- I wrote it, getting the filter and lambda function to work without looking things up in maximaBy and getting the outputOptAlignments
+-- to look pretty neat for being an output function
 
 
 -- ------------------------------------------- Problem info
@@ -33,6 +50,13 @@ scoreSpace = -1
 
 string1 = "writers"
 string2 = "vintner"
+
+string3 = "aferociousmonadatemyhamster"
+string4 = "functionalprogrammingrules"
+
+string5 = "bananrepubliksinvasionsarmestabsadjutant"
+string6 = "kontrabasfiolfodralmakarmästarlärling"
+
 e       = '-'
 
 -- ------------------------------------------- 2a
@@ -71,6 +95,9 @@ score x y = if x == y then scoreMatch
 attachHeads :: a -> a -> [([a],[a])] -> [([a],[a])]
 attachHeads h1 h2 aList = [(h1:xs,h2:ys) | (xs,ys) <- aList]
 
+attachTails :: a -> a -> [([a],[a])] -> [([a],[a])]
+attachTails h1 h2 aList = [(xs ++ [h1], ys ++ [h2]) | (xs,ys) <- aList]
+
 
 
 -- ------------------------------------------- 2c
@@ -104,7 +131,6 @@ maximaBy valueFun xs = filter (\x -> valueFun x == maxValue) xs
 
 -- maximaBy ScoreFun allAlignments
 
-
 type AlignmentType = (String,String)
 optAlignments :: String -> String -> [AlignmentType]
 optAlignments [] []               = [([],[])]
@@ -114,7 +140,7 @@ optAlignments [] (y:ys)           = attachHeads e y $ optAlignments [] ys
 optAlignments xt@(x:xs) yt@(y:ys) = maximaBy sScore alignments
                  where   sScore ([], []) = 0
                          sScore ((x:xs),(y:ys)) = score x y + sScore (xs,ys)
-                        --  sScore (x, y) = similarityScore x y
+
                          alignments = (attachHeads x y $ optAlignments xs ys) ++
                                       (attachHeads x e $ optAlignments xs yt) ++
                                       (attachHeads e y $ optAlignments xt ys)
@@ -142,17 +168,74 @@ optAlignments xt@(x:xs) yt@(y:ys) = maximaBy sScore alignments
 outputOptAlignments string1 string2 = do
         putStrLn("There are... ")
         putStrLn(showAlignments opa)
-        putStrLn(" -> " ++ show (length opa) ++ " optimal alignments:")
+        putStrLn("-> " ++ show (length opa) ++ " optimal alignments" ++ nl)
 
-        where opa = optAlignments string1 string2
+        where opa = optAlignmentsTurbo string1 string2
               showAlignments xs = concat $ map showAlignment opa
               showAlignment (a,b) = (nl ++ a ++ nl ++ b ++ nl)
-              nl = "\n"
+              nl = "\n "
 
--- ------------------------------------------- 3
+-- ------------------------------------------- 3 Optimization
+
+-- You will need to redefine the auxiliary functions used by mcsLength and the table's
+-- initial values (that is, the values in the first "row" and the first "column").
+
+-- Example
+-- similarityScoreTurbo string1 string2 = -5
+
+-- The elements in the similarityScore table should be of the type Int.
+
+similarityScoreTurbo :: String -> String -> Int
+similarityScoreTurbo xs ys = sScore (length xs) (length ys)
+  where
+    sScore i j = sTable !! i !! j
+
+    sTable = [[ sEntry i j | j <- [0..]] | i <- [0..] ]
+
+    sEntry :: Int -> Int -> Int
+    sEntry 0 0 = scoreMatch
+    sEntry _ 0 = scoreSpace
+    sEntry 0 _ = scoreSpace
+    sEntry i j = maximum [sScore (i - 1) (j - 1) + score x y ,
+                          sScore (i - 1)  j      + score x e ,
+                          sScore  i      (j - 1) + score y e ]
+      where
+         x = xs !! (i - 1)
+         y = ys !! (j - 1)
 
 
+-- Example
+-- optAlignments "aferociousmonadatemyhamster" "functionalprogrammingrules"
+-- = 308 optimal alignments
+-- optAlignments "bananrepubliksinvasionsarmestabsadjutant" "kontrabasfiolfodralmakarmästarlärling"
+-- = 1736 optimal alignments
 
+-- For optAlignments, the elements should be of the type (Int, [AlignmentType])
+-- Where the second element contain the optimal alignments themselves and
+-- the first element is the score for these alignments
+
+optAlignmentsTurbo :: String -> String -> [AlignmentType]
+optAlignmentsTurbo xs ys = snd $ alignment (length xs) (length ys)
+  where
+
+    alignment i j = aTable !! i !! j
+
+    aTable = [[ aEntry i j | j <- [0..]] | i <- [0..] ]
+
+    aEntry :: Int -> Int -> (Int, [AlignmentType])
+    aEntry 0 0 = (0, [([],[])])
+    aEntry i 0 = (scoreSpace * i, [(take i xs    , replicate i e)])
+    aEntry 0 j = (scoreSpace * j, [(replicate j e, take j ys)])
+    aEntry i j = (head scores, concat alignments)
+            where
+                (dis, dal) = alignment (i - 1) (j - 1)
+                (tos, tal) = alignment (i - 1)  j
+                (sis, sal) = alignment  i      (j - 1)
+                x = xs !! (i - 1)
+                y = ys !! (j - 1)
+                (scores, alignments) =  unzip $ maximaBy fst [(dis + score x y, attachTails x y dal),
+                                                              (tos + score x e, attachTails x e tal),
+                                                              (sis + score e y, attachTails e y sal)]
 
 -- ------------------------------------------- Maximum Common Subsequence Problem
 
@@ -170,10 +253,10 @@ outputOptAlignments string1 string2 = do
 -- mcsLength :: Eq a => [a] -> [a] -> Int
 -- mcsLength xs ys = mcsLen (length xs) (length ys)
 --   where
---     mcsLen i j = mcsTable!!i!!j
---     mcsTable = [[ mcsEntry i j | j<-[0..]] | i<-[0..] ]
+--     mcsLen i j = mcsTable!!i!!j                              -- return item at i,j
+--     mcsTable = [[ mcsEntry i j | j<-[0..]] | i<-[0..] ]      -- create table and put mcsEntry at i,j
 --
---     mcsEntry :: Int -> Int -> Int
+--     mcsEntry :: Int -> Int -> Int                            -- add entry to table
 --     mcsEntry _ 0 = 0
 --     mcsEntry 0 _ = 0
 --     mcsEntry i j
@@ -181,5 +264,5 @@ outputOptAlignments string1 string2 = do
 --       | otherwise = max (mcsLen i (j-1))
 --                         (mcsLen (i-1) j)
 --       where
---          x = xs!!(i-1)
+--          x = xs!!(i-1)                                       -- look for entry
 --          y = ys!!(j-1)
