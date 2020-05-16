@@ -6,7 +6,7 @@ import Expr
 
 dict = Dictionary.insert ("x", 1) $
        Dictionary.insert ("y", 2) $
-       Dictionary.empty 
+       Dictionary.empty
 
 testValue string = value (fromString string) dict
 
@@ -19,10 +19,7 @@ n31 = testValue "2+z"     {-  Expr.value: undefined variable z -}
 
 -- testing exponentiation
 
-p1 = testvalue "y^3"
-p2 = testvalue "y^3^4"
-p3 = testvalue "8^4"
-p4 = testvalue "(y+3)*2^(x+y)"
-
-
-
+-- p1 = testvalue "y^3"
+-- p2 = testvalue "y^3^4"
+-- p3 = testvalue "8^4"
+-- p4 = testvalue "(y+3)*2^(x+y)"
