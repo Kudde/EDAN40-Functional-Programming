@@ -29,18 +29,20 @@ import qualified Dictionary
 import Data.Maybe (fromMaybe)
 
 data Expr = Num Integer | Var String | Add Expr Expr
-       | Sub Expr Expr | Mul Expr Expr | Div Expr Expr
+          | Sub Expr Expr | Mul Expr Expr | Div Expr Expr | Pow Expr Expr
          deriving Show
 
 type T = Expr
 
-var, num, factor, term, expr :: Parser Expr
+var, num, power, factor, term, expr :: Parser Expr
 
 term', expr' :: Expr -> Parser Expr
 
 var = word >-> Var
 
 num = number >-> Num
+
+powOp = lit '^' >-> (\_ -> Pow)
 
 mulOp = lit '*' >-> (\_ -> Mul) !
         lit '/' >-> (\_ -> Div)
@@ -50,10 +52,13 @@ addOp = lit '+' >-> (\_ -> Add) !
 
 bldOp e (oper,e') = oper e e'
 
-factor = num !
-         var !
-         lit '(' -# expr #- lit ')' !
-         err "illegal factor"
+power = num !
+        var !
+        lit '(' -# expr #- lit ')' !
+        err "illegal factor"
+
+factor' e = powOp # power >-> bldOp e #> factor' ! return e
+factor = power #> factor'
 
 term' e = mulOp # factor >-> bldOp e #> term' ! return e
 term = factor #> term'
@@ -70,6 +75,7 @@ shw prec (Add t u) = parens (prec>5) (shw 5 t ++ "+" ++ shw 5 u)
 shw prec (Sub t u) = parens (prec>5) (shw 5 t ++ "-" ++ shw 6 u)
 shw prec (Mul t u) = parens (prec>6) (shw 6 t ++ "*" ++ shw 6 u)
 shw prec (Div t u) = parens (prec>6) (shw 6 t ++ "/" ++ shw 7 u)
+shw prec (Pow t u) = parens (prec>7) (shw 7 t ++ "^" ++ shw 7 u)
 
 -- Example
 -- value expr dictionary
@@ -80,11 +86,11 @@ value (Var v) d   = fromMaybe (error "Please define all variables..") (Dictionar
 value (Add l r) d = value l d + value r d
 value (Sub l r) d = value l d - value r d
 value (Mul l r) d = value l d * value r d
+value (Pow l r) d = value l d ^ value r d
 value (Div t n) d
     | value n d == 0    = error "It's a bomb! or /Zero."
     | otherwise         = div (value t d) (value n d)
-    
--- value (Pow a b) d = value a d ^ value b d
+
 
 
 instance Parse Expr where

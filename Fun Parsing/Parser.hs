@@ -1,4 +1,4 @@
-module Parser(module CoreParser, T, digit, digitVal, chars, letter, err,
+module Parser(module CoreParser, T, digit, digitVal, chars, line, letter, err,
               lit, number, iter, accept, require, token,
               spaces, word, (-#), (#-)) where
 import Prelude hiding (return, fail)
@@ -43,11 +43,14 @@ chars :: Int -> Parser String
 chars 0 = return []
 chars n = char # chars (n - 1) >-> cons
 
+line :: Parser String
+line = iter $ char ? (/='\n')
+
 -- Is w first in string?
 accept :: String -> Parser String
 accept w = (token (chars (length w))) ? (==w)
 
--- Accepts the same string input as accept w but reports the missing string using err in case of failure.
+-- Same as accept but reports missing string if failure
 require :: String -> Parser String
 require w  = accept w ! err w
 
@@ -63,5 +66,6 @@ digitVal = digit >-> digitToInt >-> fromIntegral
 number' :: Integer -> Parser Integer
 number' n = digitVal #> (\ d -> number' (10*n+d))
           ! return n
+
 number :: Parser Integer
 number = token (digitVal #> number')
