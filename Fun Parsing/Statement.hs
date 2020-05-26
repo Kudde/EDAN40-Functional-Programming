@@ -10,7 +10,6 @@ data Statement = Assignment String Expr.T
         | Begin         [Statement]
         | Write         Expr.T
         | Read          String
-        | Comment       String
         | Skip
         deriving Show
 
@@ -61,9 +60,6 @@ buildRead v = Read v
 writeStmt = accept "write" -# Expr.parse #- require ";" >-> buildWrite
 buildWrite e = Write e
 
-commentStmt = accept "--" -# line #- require "\n" >-> buildComment
-buildComment s = Comment s
-
 
 exec :: [T] -> Dictionary.T String Integer -> [Integer] -> [Integer]
 exec [] dict input                              = []
@@ -72,7 +68,6 @@ exec (Skip : stmts) dict input                  = exec stmts dict input
 exec (Begin stmt : stmts) dict input            = exec (stmt ++ stmts) dict input
 exec (Read v : stmts) dict input                = exec stmts (Dictionary.insert (v, head input) dict) (tail input)
 exec (Write expr : stmts) dict input            = Expr.value expr dict : exec stmts dict input
-exec (Comment stmt : stmts) dict input          = exec stmts dict input
 
 exec (If cond thenStmts elseStmts : stmts) dict input =
         if   Expr.value cond dict > 0
@@ -92,7 +87,6 @@ shw n (Assignment name expr)    = tab n ++ name      ++ " := " ++ Expr.toString 
 shw n (Begin stmt)              = tab n ++ "begin\n" ++ concatMap (shw (n + 1)) stmt ++ tab n ++ "end\n"
 shw n (Read v)                  = tab n ++ "read "   ++ v ++ ";\n"
 shw n (Write expr)              = tab n ++ "write "  ++ Expr.toString expr ++ ";\n"
-shw n (Comment s)               = tab n ++ "--"      ++ s ++ "\n"
 shw n (While cond stmt)         = tab n ++ "while "  ++ Expr.toString cond ++ " do\n" ++ shw (n + 1) stmt
 shw n (Skip)                    = tab n ++ "skip;\n"
 
@@ -103,5 +97,5 @@ shw n (If cond thenStmts elseStmt) = tab n ++ "if " ++ Expr.toString cond ++ " t
 
 
 instance Parse Statement where
-        parse = assStmt ! skipStmt ! beginStmt ! ifStmt ! whileStmt ! readStmt ! writeStmt ! commentStmt
+        parse = assStmt ! skipStmt ! beginStmt ! ifStmt ! whileStmt ! readStmt ! writeStmt
         toString = shw 0

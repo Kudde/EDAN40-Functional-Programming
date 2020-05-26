@@ -9,6 +9,7 @@ p0 = fromString  ("\
 \read k;\
 \read n;\
 \m := 1;\
+\-- hej \n\
 \while n-m do\
 \  begin\
 \    if m - m/k*k then\

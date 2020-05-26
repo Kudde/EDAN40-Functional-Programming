@@ -1,4 +1,4 @@
-module Parser(module CoreParser, T, digit, digitVal, chars, line, letter, err,
+module Parser(module CoreParser, T, digit, digitVal, chars, comments, letter, err,
               lit, number, iter, accept, require, token,
               spaces, word, (-#), (#-)) where
 import Prelude hiding (return, fail)
@@ -16,20 +16,23 @@ iter m = m # iter m >-> cons ! return []
 
 cons(a, b) = a:b
 
--- something # something then return snd something
 (-#) :: Parser a -> Parser b -> Parser b
 m -# n = m # n >-> snd
 
--- something # something then return fst something
 (#-) :: Parser a -> Parser b -> Parser a
 m #- n = m # n >-> fst
 
--- Check if first char is space. Could also be many spaces..
 spaces :: Parser String
-spaces =  iter $ char ? isSpace
+spaces = iter $ char ? isSpace
+
+comments :: Parser [String]
+comments = iter (accept "--" -# comment -# require "\n")
+
+comment :: Parser String
+comment = iter $ char ? (/='\n')
 
 token :: Parser a -> Parser a
-token m = m #- spaces
+token m = m #- spaces #- comments
 
 -- Check if first char is letter
 letter :: Parser Char
@@ -43,8 +46,6 @@ chars :: Int -> Parser String
 chars 0 = return []
 chars n = char # chars (n - 1) >-> cons
 
-line :: Parser String
-line = iter $ char ? (/='\n')
 
 -- Is w first in string?
 accept :: String -> Parser String
@@ -52,7 +53,7 @@ accept w = (token (chars (length w))) ? (==w)
 
 -- Same as accept but reports missing string if failure
 require :: String -> Parser String
-require w  = accept w ! err w
+require w  = accept w ! err ("Error: Expecting " ++ w)
 
 lit :: Char -> Parser Char
 lit c = token char ? (==c)

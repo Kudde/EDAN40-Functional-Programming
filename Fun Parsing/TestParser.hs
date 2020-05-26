@@ -10,6 +10,10 @@ l3 = letter ""      {- Nothing -}
 
 w1 = spaces "abc"  {- Just("","abc") -}
 w2 = spaces "  \t abc"  {- Just("  \t ","abc") -}
+w3 = spaces "-- abc \n ost"
+w4 = comments "--bca\n"
+
+
 
 c1 = chars 2 "abc"          {-  Just ("ab","c")  -}
 c2 = chars 0 "ab"          {-  Just ("","ab")  -}

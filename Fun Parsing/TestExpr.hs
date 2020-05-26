@@ -23,3 +23,4 @@ p1 = testValue "y^3"
 p2 = testValue "y^3^4"
 p3 = testValue "8^4"
 p4 = testValue "(y+3)*2^(x+y)"
+p5 = testValue "1+4^3^2" -- 4 097

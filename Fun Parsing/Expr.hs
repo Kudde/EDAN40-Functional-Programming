@@ -66,6 +66,7 @@ term = factor #> term'
 expr' e = addOp # term >-> bldOp e #> expr' ! return e
 expr = term #> expr'
 
+
 parens cond str = if cond then "(" ++ str ++ ")" else str
 
 shw :: Int -> Expr -> String
